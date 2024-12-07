@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299785488986",
+    "project_id": "tedarikciuygulamasi-3e155",
+    "storage_bucket": "tedarikciuygulamasi-3e155.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299785488986:android:52a7f512ef9c39d523a663",
+        "android_client_info": {
+          "package_name": "com.example.tedarikci_uygulamasi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoGtyHiL9a3-9CLSmfXEc0HZmZWl9VCNU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
