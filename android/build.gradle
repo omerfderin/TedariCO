@@ -25,5 +25,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:7.0.4'  // Android Gradle plugin
         classpath 'com.google.gms:google-services:4.4.2'  // Firebase için gerekli dependency
+        classpath 'com.google.firebase:firebase-appcheck-playintegrity:16.1.0'
+
     }
 }

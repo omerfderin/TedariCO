@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home_screen.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'home_screen.dart'; // Ana ekranı import et
 
 class TedarikEkleScreen extends StatefulWidget {
   final String userEmail;
@@ -12,255 +15,303 @@ class TedarikEkleScreen extends StatefulWidget {
 }
 
 class _TedarikEkleScreenState extends State<TedarikEkleScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _baslikController = TextEditingController();
   final _aciklamaController = TextEditingController();
   final _fiyatController = TextEditingController();
   final _detayliAciklamaController = TextEditingController();
+  XFile? _image; // Görsel değişkeni
 
-  Future<void> _saveTedarik() async {
-    if (_formKey.currentState!.validate()) {
+  final _picker = ImagePicker();
+
+  String? _selectedSector; // Seçilen sektör
+
+  // Sektör listesini tanımlıyoruz
+  final List<String> _sectors = [
+    'Teknoloji',
+    'Tarım',
+    'Sanayi',
+    'Sağlık',
+    'Eğitim',
+    'Gıda',
+    'Perakende'
+  ];
+
+  // Görsel seçme
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      _image = pickedFile;
+    });
+  }
+
+  // Tedarik paylaşma
+  Future<void> _shareTedarik() async {
+    if (_image != null && _selectedSector != null) {
       try {
+        // Firebase Storage'a görsel yükle
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('tedarik_resimleri')
+            .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await storageRef.putFile(File(_image!.path));
+
+        // Görselin URL'sini al
+        final imageUrl = await storageRef.getDownloadURL();
+
+        // Firestore'a tedarik kaydet
         await FirebaseFirestore.instance.collection('tedarikler').add({
           'baslik': _baslikController.text,
           'aciklama': _aciklamaController.text,
-          'fiyat': double.parse(_fiyatController.text),
+          'fiyat': double.tryParse(_fiyatController.text) ?? 0,
           'detayli_aciklama': _detayliAciklamaController.text,
           'kullanici': widget.userEmail,
+          'imageUrl': imageUrl, // Görsel URL'si
           'basvuranlar': [],
+          'sektor': _selectedSector, // Seçilen sektör
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Tedarik başarıyla paylaşıldı!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 1),
-            margin: EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-
-        // Mesajın görünmesi için 2 saniye bekleyip sonra yönlendirme yapalım
-        await Future.delayed(Duration(seconds: 2));
-
-        Navigator.pushAndRemoveUntil(
+        // Başarılı işlem sonrası ana ekrana yönlendirme
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tedarik başarıyla paylaşıldı!')));
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                HomeScreen(
-                    userEmail: widget.userEmail, theme: Theme.of(context)),
-          ),
-              (route) => false,
+          MaterialPageRoute(builder: (context) => HomeScreen(userEmail: widget.userEmail)),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Hata: $e'),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lütfen bir görsel ve sektör seçin!')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: null,
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme
-                    .of(context)
-                    .primaryColor
-                    .withOpacity(0.1),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Başlık Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Yeni Tedarik Oluştur',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Theme
-                          .of(context)
-                          .textTheme
-                          .displayMedium!
-                          .color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildInfoField(
-                      context: context,
-                      controller: _baslikController,
-                      label: 'Tedarik Başlığı',
-                      icon: Icons.title,
-                    ),
-                    SizedBox(height: 24),
-                    _buildInfoField(
-                      context: context,
-                      controller: _aciklamaController,
-                      label: 'Tedarik Açıklaması',
-                      icon: Icons.description,
-                    ),
-                    SizedBox(height: 24),
-                    _buildInfoField(
-                      context: context,
-                      controller: _fiyatController,
-                      label: 'Fiyat (TL)',
-                      icon: Icons.monetization_on,
-                      iconColor: Colors.green,
-                      keyboardType: TextInputType.number,
-                    ),
-                    SizedBox(height: 24),
-                    _buildInfoField(
-                      context: context,
-                      controller: _detayliAciklamaController,
-                      label: 'Detaylı Açıklama',
-                      icon: Icons.article,
-                      maxLines: 5,
-                    ),
-                    SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _saveTedarik,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_circle_outline,
-                            color: Colors.green.shade300,
+                color: Colors.blue[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.title, color: Colors.blue, size: 30),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _baslikController,
+                          decoration: InputDecoration(
+                            labelText: 'Tedarik Başlığı',
+                            border: InputBorder.none,
                           ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Tedarik Paylaş',
-                            style: TextStyle(
-                              color: Theme
-                                  .of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        side: BorderSide(color: Colors.white10, width: 2),
-                        backgroundColor: Theme
-                            .of(context)
-                            .primaryColor,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              SizedBox(height: 16),
 
-  Widget _buildInfoField({
-    required BuildContext context,
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    Color? iconColor,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      cursorColor: Theme
-          .of(context)
-          .colorScheme
-          .onSurface,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Theme
-            .of(context)
-            .colorScheme
-            .onSurface),
-        prefixIcon: Icon(icon, color: iconColor ?? Theme
-            .of(context)
-            .colorScheme
-            .onSurface),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Theme
-              .of(context)
-              .colorScheme
-              .onSurface
-              .withOpacity(0.5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(
-              color: Theme
-                  .of(context)
-                  .colorScheme
-                  .onSurface,
+              // Açıklama Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: Colors.green[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.description, color: Colors.green, size: 30),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _aciklamaController,
+                          decoration: InputDecoration(
+                            labelText: 'Tedarik Açıklaması',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Fiyat Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: Colors.orange[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.monetization_on, color: Colors.orange, size: 30),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _fiyatController,
+                          decoration: InputDecoration(
+                            labelText: 'Fiyat',
+                            border: InputBorder.none,
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Detaylı Açıklama Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: Colors.purple[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.details, color: Colors.purple, size: 30),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _detayliAciklamaController,
+                          decoration: InputDecoration(
+                            labelText: 'Detaylı Açıklama',
+                            border: InputBorder.none,
+                          ),
+                          maxLines: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Sektör Seçim Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: Colors.teal[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.business, color: Colors.teal, size: 30),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          value: _selectedSector,
+                          hint: Text('Sektör Seçin'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedSector = newValue;
+                            });
+                          },
+                          items: _sectors.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Sektör Detay Kartı (Seçilen sektör burada gösterilecek)
+              if (_selectedSector != null) ...[
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  color: Colors.teal[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check, color: Colors.teal, size: 30),
+                        SizedBox(width: 16),
+                        Text(
+                          'Seçilen Sektör: $_selectedSector',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
+
+              // Görsel Seçme Kartı
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: Colors.teal[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.photo, color: Colors.teal, size: 30),
+                      SizedBox(width: 16),
+                      TextButton(
+                        onPressed: _pickImage,
+                        child: Text('Görsel Seç', style: TextStyle(color: Colors.teal, fontSize: 18)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_image != null) ...[
+                SizedBox(height: 16),
+                Image.file(File(_image!.path), height: 200, fit: BoxFit.cover),
+              ],
+              SizedBox(height: 20),
+
+              // Paylaş Butonu
+              ElevatedButton(
+                onPressed: _shareTedarik,
+                child: Text('Tedarik Paylaş', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple, // Buton rengi
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Theme
-              .of(context)
-              .colorScheme
-              .onSurface
-              .withOpacity(0.3)),
-        ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return '$label boş olamaz';
-        }
-        return null;
-      },
     );
   }
 }

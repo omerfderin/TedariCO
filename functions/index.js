@@ -1,51 +1,38 @@
-// Firebase Admin ve Functions modüllerini içe aktarıyoruz
-const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const functions = require('firebase-functions/v1');
 const admin = require("firebase-admin");
-
-// Firebase Admin SDK'sını başlatıyoruz
 admin.initializeApp();
 
-// Cloud Function: Tedarikler koleksiyonundaki değişiklikleri dinler
-exports.sendApplicationNotification = onDocumentUpdated(
-  "tedarikler/{tedarikId}",
-  async (event) => {
-    const beforeData = event.data.before.data();
-    const afterData = event.data.after.data();
+exports.sendNotification = functions.firestore
+  .document("tedarikler/{tedarikId}")
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const oldData = change.before.data();
 
-    // Eğer başvuranlar listesi güncellenmişse:
-    if (afterData.basvuranlar.length > beforeData.basvuranlar.length) {
-      const yeniBasvuran = afterData.basvuranlar[afterData.basvuranlar.length - 1];
-      const kartSahibiEmail = afterData.kullanici;
+    if (newData.basvuranlar.length !== oldData.basvuranlar.length) {
+      const newApplicant = newData.basvuranlar.find(email => !oldData.basvuranlar.includes(email));
+      const tedarikSahibiEmail = newData.kullanici;
 
-      try {
-        // Kart sahibinin FCM token'ını almak için users koleksiyonunu sorgula
-        const userDoc = await admin
-          .firestore()
-          .collection("users")
-          .doc(kartSahibiEmail)
-          .get();
+      const userDoc = await admin.firestore().collection("users").doc(tedarikSahibiEmail).get();
+      const token = userDoc.data()?.fcmToken;
 
-        if (userDoc.exists && userDoc.data().fcmToken) {
-          const token = userDoc.data().fcmToken;
+      if (token) {
+        const message = {
+          notification: {
+            title: "Yeni Başvuru!",
+            body: `${newApplicant} adlı kullanıcı, "${tedarik.baslik}" tedarikinize başvurdu.`,
+          },
+          token: token,
+        };
 
-          // Bildirim içeriği
-          const payload = {
-            notification: {
-              title: "Yeni Başvuru!",
-              body: `${yeniBasvuran} isimli kullanıcı kartınıza başvurdu.`,
-              clickAction: "FLUTTER_NOTIFICATION_CLICK",
-            },
-          };
-
-          // Bildirimi gönder
-          await admin.messaging().sendToDevice(token, payload);
-          console.log("Bildirim başarıyla gönderildi!");
-        } else {
-          console.log("Kart sahibi için FCM Token bulunamadı.");
+        try {
+          await admin.messaging().send(message);
+          console.log("Bildirim gönderildi.");
+        } catch (error) {
+          console.error("Bildirim hatası:", error);
         }
-      } catch (error) {
-        console.error("Bildirim gönderimi sırasında hata oluştu:", error);
+      } else {
+        console.log("Kullanıcının FCM tokeni bulunamadı.");
       }
     }
-  }
-);
+  });
+

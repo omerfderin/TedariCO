@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/login_screen.dart'; // Giriş ekranı
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -8,19 +9,22 @@ void main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
+@override
+void initState() {
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Bildirim geldi: ${message.notification?.title}');
+  });
 }
 
-class _MyAppState extends State<MyApp> {
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tedarikçi Uygulaması',
-      home: LoginScreen(),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
       initialRoute: '/login', // Başlangıç ekranı
       routes: {
         '/login': (context) => LoginScreen(), // Login ekranı
