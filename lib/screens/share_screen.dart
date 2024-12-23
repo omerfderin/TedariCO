@@ -21,33 +21,63 @@ class _TedarikEkleScreenState extends State<TedarikEkleScreen> {
   Future<void> _saveTedarik() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Firestore veritabanına tedarik ekleme
         await FirebaseFirestore.instance.collection('tedarikler').add({
           'baslik': _baslikController.text,
           'aciklama': _aciklamaController.text,
           'fiyat': double.parse(_fiyatController.text),
           'detayli_aciklama': _detayliAciklamaController.text,
-          'kullanici': widget.userEmail, // Kullanıcı e-posta bilgisi
-          'basvuranlar': [], // Başvuranlar listesi başlangıçta boş
+          'kullanici': widget.userEmail,
+          'basvuranlar': [],
         });
 
-        // Başarılı bir şekilde tedarik eklendiğinde, mesaj göster ve HomeScreen'e yönlendir
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tedarik başarıyla eklendi!')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Tedarik başarıyla paylaşıldı!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 1),
+            margin: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
 
-        // Ana ekrana dön ve önceki stack'leri temizle
+        // Mesajın görünmesi için 2 saniye bekleyip sonra yönlendirme yapalım
+        await Future.delayed(Duration(seconds: 2));
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(userEmail: widget.userEmail), // Burada widget.userEmail'i doğru geçiyoruz
+            builder: (context) =>
+                HomeScreen(
+                    userEmail: widget.userEmail, theme: Theme.of(context)),
           ),
               (route) => false,
         );
       } catch (e) {
-        // Hata durumunda bir uyarı göster
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Hata: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
     }
@@ -56,84 +86,181 @@ class _TedarikEkleScreenState extends State<TedarikEkleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tedarik Ekle'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _baslikController,
-                decoration: InputDecoration(
-                  labelText: 'Tedarik Başlığı',
-                  border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme
+                    .of(context)
+                    .primaryColor
+                    .withOpacity(0.1),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Başlık boş olamaz';
-                  }
-                  return null;
-                },
               ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _aciklamaController,
-                decoration: InputDecoration(
-                  labelText: 'Tedarik Açıklaması',
-                  border: OutlineInputBorder(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Yeni Tedarik Oluştur',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Theme
+                          .of(context)
+                          .textTheme
+                          .displayMedium!
+                          .color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildInfoField(
+                      context: context,
+                      controller: _baslikController,
+                      label: 'Tedarik Başlığı',
+                      icon: Icons.title,
+                    ),
+                    SizedBox(height: 24),
+                    _buildInfoField(
+                      context: context,
+                      controller: _aciklamaController,
+                      label: 'Tedarik Açıklaması',
+                      icon: Icons.description,
+                    ),
+                    SizedBox(height: 24),
+                    _buildInfoField(
+                      context: context,
+                      controller: _fiyatController,
+                      label: 'Fiyat (TL)',
+                      icon: Icons.monetization_on,
+                      iconColor: Colors.green,
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 24),
+                    _buildInfoField(
+                      context: context,
+                      controller: _detayliAciklamaController,
+                      label: 'Detaylı Açıklama',
+                      icon: Icons.article,
+                      maxLines: 5,
+                    ),
+                    SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: _saveTedarik,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle_outline,
+                            color: Colors.green.shade300,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Tedarik Paylaş',
+                            style: TextStyle(
+                              color: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        side: BorderSide(color: Colors.white10, width: 2),
+                        backgroundColor: Theme
+                            .of(context)
+                            .primaryColor,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Açıklama boş olamaz';
-                  }
-                  return null;
-                },
               ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _fiyatController,
-                decoration: InputDecoration(
-                  labelText: 'Fiyat',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Fiyat boş olamaz';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Geçerli bir fiyat girin';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _detayliAciklamaController,
-                decoration: InputDecoration(
-                  labelText: 'Detaylı Açıklama',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Detaylı açıklama boş olamaz';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveTedarik,
-                child: Text('Tedarik Paylaş'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoField({
+    required BuildContext context,
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    Color? iconColor,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      cursorColor: Theme
+          .of(context)
+          .colorScheme
+          .onSurface,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Theme
+            .of(context)
+            .colorScheme
+            .onSurface),
+        prefixIcon: Icon(icon, color: iconColor ?? Theme
+            .of(context)
+            .colorScheme
+            .onSurface),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Theme
+              .of(context)
+              .colorScheme
+              .onSurface
+              .withOpacity(0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+              color: Theme
+                  .of(context)
+                  .colorScheme
+                  .onSurface,
+          ),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Theme
+              .of(context)
+              .colorScheme
+              .onSurface
+              .withOpacity(0.3)),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return '$label boş olamaz';
+        }
+        return null;
+      },
     );
   }
 }

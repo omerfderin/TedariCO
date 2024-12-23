@@ -8,15 +8,19 @@ void main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tedarikçi Uygulaması',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      home: LoginScreen(),
       initialRoute: '/login', // Başlangıç ekranı
       routes: {
         '/login': (context) => LoginScreen(), // Login ekranı

@@ -20,7 +20,6 @@ class _TedarikUpdateScreenState extends State<TedarikUpdateScreen> {
   @override
   void initState() {
     super.initState();
-    // Mevcut tedarik verilerini controller'lara atıyoruz
     _baslikController.text = widget.tedarik['baslik'];
     _aciklamaController.text = widget.tedarik['aciklama'];
     _fiyatController.text = widget.tedarik['fiyat'].toString();
@@ -41,7 +40,7 @@ class _TedarikUpdateScreenState extends State<TedarikUpdateScreen> {
           SnackBar(content: Text('Tedarik başarıyla güncellendi!')),
         );
 
-        Navigator.pop(context); // Güncelleme sonrası geri dön
+        Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata: $e')),
@@ -55,6 +54,7 @@ class _TedarikUpdateScreenState extends State<TedarikUpdateScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tedarik Güncelle'),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -62,75 +62,52 @@ class _TedarikUpdateScreenState extends State<TedarikUpdateScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                controller: _baslikController,
-                decoration: InputDecoration(
-                  labelText: 'Tedarik Başlığı',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Başlık boş olamaz';
-                  }
-                  return null;
-                },
-              ),
+              _buildTextField(_baslikController, 'Tedarik Başlığı'),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _aciklamaController,
-                decoration: InputDecoration(
-                  labelText: 'Tedarik Açıklaması',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Açıklama boş olamaz';
-                  }
-                  return null;
-                },
-              ),
+              _buildTextField(_aciklamaController, 'Tedarik Açıklaması'),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _fiyatController,
-                decoration: InputDecoration(
-                  labelText: 'Fiyat',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Fiyat boş olamaz';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Geçerli bir fiyat girin';
-                  }
-                  return null;
-                },
-              ),
+              _buildTextField(_fiyatController, 'Fiyat', isNumeric: true),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _detayliAciklamaController,
-                decoration: InputDecoration(
-                  labelText: 'Detaylı Açıklama (Gizli)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Detaylı açıklama boş olamaz';
-                  }
-                  return null;
-                },
-              ),
+              _buildTextField(_detayliAciklamaController, 'Detaylı Açıklama', maxLines: 5),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _updateTedarik,
                 child: Text('Tedarik Güncelle'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String labelText, {bool isNumeric = false, int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Theme.of(context).primaryColor),
+        ),
+      ),
+      keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return '$labelText boş olamaz';
+        }
+        if (isNumeric && double.tryParse(value) == null) {
+          return 'Geçerli bir fiyat girin';
+        }
+        return null;
+      },
+      maxLines: maxLines,
     );
   }
 }
