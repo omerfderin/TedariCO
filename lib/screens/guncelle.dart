@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'profile_screen.dart';
 
 class GuncelleScreen extends StatefulWidget {
   final DocumentSnapshot tedarik;
+  final String userEmail;
+  final Function toggleTheme;
+  final bool isDarkMode;
 
-  GuncelleScreen({required this.tedarik});
+  GuncelleScreen({
+    required this.tedarik,
+    required this.userEmail,
+    required this.toggleTheme,
+    required this.isDarkMode,
+  });
 
   @override
-  _GuncelleScreenState createState() => _GuncelleScreenState();
+  GuncelleScreenState createState() => GuncelleScreenState();
 }
 
-class _GuncelleScreenState extends State<GuncelleScreen> {
+class GuncelleScreenState extends State<GuncelleScreen> {
   final _formKey = GlobalKey<FormState>();
   final _baslikController = TextEditingController();
   final _aciklamaController = TextEditingController();
@@ -20,7 +29,6 @@ class _GuncelleScreenState extends State<GuncelleScreen> {
   @override
   void initState() {
     super.initState();
-    // Mevcut tedarik verilerini controller'lara atıyoruz
     _baslikController.text = widget.tedarik['baslik'];
     _aciklamaController.text = widget.tedarik['aciklama'];
     _fiyatController.text = widget.tedarik['fiyat'].toString();
@@ -41,13 +49,59 @@ class _GuncelleScreenState extends State<GuncelleScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tedarik başarıyla güncellendi!')),
+          SnackBar(content: Text('Tedarik başarıyla güncellendi!'), backgroundColor: Colors.green),
         );
 
         Navigator.pop(context); // Güncelleme sonrası geri dön
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+  void _deleteTedarik() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Silme Onayı'),
+          content: Text('Bu paylaşımı silmek istediğinize emin misiniz?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false), // Vazgeç
+              child: Text('Hayır'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true), // Onayla
+              child: Text('Evet'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('tedarikler')
+            .doc(widget.tedarik.id)
+            .delete();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tedarik başarıyla silindi!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context); // Silme sonrası önceki sayfaya dön
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -64,14 +118,28 @@ class _GuncelleScreenState extends State<GuncelleScreen> {
           content: basvuranlar.isEmpty
               ? Text('Henüz başvuru yok.')
               : SizedBox(
-            height: 300, // Maksimum yükseklik belirtiyoruz
-            width: double.maxFinite, // Genişliği sınırlandırıyoruz
+            height: 300,
+            width: double.maxFinite,
             child: ListView.builder(
               itemCount: basvuranlar.length,
               itemBuilder: (context, index) {
                 return ListTile(
                   leading: Icon(Icons.person),
                   title: Text(basvuranlar[index]),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfileScreen(
+                          userEmail: widget.tedarik['basvuranlar'][index],
+                          firebaseUser: widget.userEmail,
+                          toggleTheme: widget.toggleTheme,
+                          isDarkMode: widget.isDarkMode,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -91,182 +159,207 @@ class _GuncelleScreenState extends State<GuncelleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tedarik Güncelle',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.deepPurple,
+        title: Text('Tedarik Bilgisi Güncelle',style: TextStyle(color: Colors.white),),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // Başlık Kartı
-              Card(
-                elevation: 6,
-                margin: EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.title, color: Colors.deepPurple),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _baslikController,
-                          decoration: InputDecoration(
-                            labelText: 'Tedarik Başlığı',
-                            border: InputBorder.none,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Başlık boş olamaz';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Açıklama Kartı
-              Card(
-                elevation: 6,
-                margin: EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.description, color: Colors.deepPurple),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _aciklamaController,
-                          decoration: InputDecoration(
-                            labelText: 'Tedarik Açıklaması',
-                            border: InputBorder.none,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Açıklama boş olamaz';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Fiyat Kartı
-              Card(
-                elevation: 6,
-                margin: EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.monetization_on, color: Colors.deepPurple),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _fiyatController,
-                          decoration: InputDecoration(
-                            labelText: 'Fiyat',
-                            border: InputBorder.none,
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Fiyat boş olamaz';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Geçerli bir fiyat girin';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Detaylı Açıklama Kartı
-              Card(
-                elevation: 6,
-                margin: EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.notes, color: Colors.deepPurple),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _detayliAciklamaController,
-                          decoration: InputDecoration(
-                            labelText: 'Detaylı Açıklama',
-                            border: InputBorder.none,
-                          ),
-                          maxLines: 5,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Detaylı açıklama boş olamaz';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Güncelleme Butonu
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: ElevatedButton(
-                  onPressed: _updateTedarik,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: TextStyle(fontSize: 16),
-                  ),
-                  child: Text('Tedarik Güncelle',style: TextStyle(color: Colors.white),),
-                ),
-              ),
-              // Başvuranları Görüntüle Butonu
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: ElevatedButton(
-                  onPressed: () => _showBasvuranlar(context),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blueGrey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: TextStyle(fontSize: 16),
-                  ),
-                  child: Text('Başvuranları Görüntüle',style: TextStyle(color: Colors.white),),
-                ),
-              ),
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).cardColor,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                // Başlık Kartı
+                Card(
+                  elevation: 6,
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.title, color: Colors.blue),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _baslikController,
+                            decoration: InputDecoration(
+                              labelText: 'Tedarik Başlığı',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Başlık boş olamaz';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Açıklama Kartı
+                Card(
+                  elevation: 6,
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.description, color: Colors.amber),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _aciklamaController,
+                            decoration: InputDecoration(
+                              labelText: 'Tedarik Açıklaması',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Açıklama boş olamaz';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Fiyat Kartı
+                Card(
+                  elevation: 6,
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.monetization_on,color: Colors.green),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _fiyatController,
+                            decoration: InputDecoration(
+                              labelText: 'Fiyat (\₺)',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Fiyat boş olamaz';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Geçerli bir fiyat girin';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Detaylı Açıklama Kartı
+                Card(
+                  elevation: 6,
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.notes, color: Colors.blueGrey),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _detayliAciklamaController,
+                            decoration: InputDecoration(
+                              labelText: 'Detaylı Açıklama',
+                            ),
+                            maxLines: 5,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Detaylı açıklama boş olamaz';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Güncelleme Butonu
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: ElevatedButton(
+                    onPressed: _updateTedarik,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                    child: Text('Tedarik Güncelle',style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+                // Başvuranları Görüntüle Butonu
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: () => _showBasvuranlar(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                    child: Text('Başvuranları Görüntüle',style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: _deleteTedarik,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                    child: Text(
+                      'Paylaşımı Sil',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,40 +1,80 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'profile_screen.dart';
 
-class TedarikDetayScreen extends StatelessWidget {
+class TedarikDetayScreen extends StatefulWidget {
   final DocumentSnapshot tedarik;
   final String currentUserEmail;
+  final Function toggleTheme;
+  final bool isDarkMode;
 
-  TedarikDetayScreen({required this.tedarik, required this.currentUserEmail});
+  TedarikDetayScreen({
+    required this.tedarik,
+    required this.currentUserEmail,
+    required this.toggleTheme,
+    required this.isDarkMode,
+  });
 
-  void _applyToTedarik(BuildContext context) async {
+  @override
+  TedarikDetayScreenState createState() => TedarikDetayScreenState();
+}
+
+class TedarikDetayScreenState extends State<TedarikDetayScreen> {
+  bool _hasApplied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfApplied();
+  }
+
+  void _checkIfApplied() {
+    List<dynamic> basvuranlar = widget.tedarik['basvuranlar'] ?? [];
+    setState(() {
+      _hasApplied = basvuranlar.contains(widget.currentUserEmail);
+    });
+  }
+
+  void _toggleApplication() async {
     try {
-      List<String> basvuranlar = List<String>.from(tedarik['basvuranlar'] ?? []);
+      List<dynamic> basvuranlar = List.from(widget.tedarik['basvuranlar'] ?? []);
 
-      if (basvuranlar.contains(currentUserEmail)) {
-        _showErrorDialog(context);
-        return;
+      if (_hasApplied) {
+        basvuranlar.remove(widget.currentUserEmail);
+      } else {
+        basvuranlar.add(widget.currentUserEmail);
+
+        // Bildirim oluştur
+        await FirebaseFirestore.instance.collection('bildirimler').add({
+          'alici': widget.tedarik['kullanici'],
+          'gonderen': widget.currentUserEmail,
+          'tedarikId': widget.tedarik.id,
+          'tedarikBaslik': widget.tedarik['baslik'],
+          'mesaj': '${widget.currentUserEmail} ilanınıza başvurdu',
+          'okundu': false,
+          'tarih': FieldValue.serverTimestamp(),
+          'tip': 'basvuru'
+        });
       }
 
-      basvuranlar.add(currentUserEmail);
+      await FirebaseFirestore.instance
+          .collection('tedarikler')
+          .doc(widget.tedarik.id)
+          .update({'basvuranlar': basvuranlar});
 
-      await tedarik.reference.update({
-        'basvuranlar': basvuranlar,
+      setState(() {
+        _hasApplied = !_hasApplied;
       });
 
-      final tedarikSahibiEmail = tedarik['kullanici'];
-
-      await FirebaseFirestore.instance.collection('bildirimler').add({
-        'kullanici': tedarikSahibiEmail,
-        'basvuran_email': currentUserEmail,
-        'mesaj': '$currentUserEmail, başvuruda bulundu!',
-        'tarih': Timestamp.now(),
-      });
-
-      _showSuccessDialog(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_hasApplied ? 'Başvuru yapıldı!' : 'Başvuru geri çekildi.'),
+          backgroundColor: _hasApplied ? Colors.green : Colors.red,
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hata: $e')),
+        SnackBar(content: Text('Bir hata oluştu: $e')),
       );
     }
   }
@@ -44,14 +84,13 @@ class TedarikDetayScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.black.withOpacity(0.9),
           child: GestureDetector(
             onTap: () {
               Navigator.of(context).pop();
             },
             child: Image.network(
               imageUrl,
-              fit: BoxFit.contain,
+              fit: BoxFit.fitWidth,
               height: MediaQuery.of(context).size.height * 0.8,
             ),
           ),
@@ -60,87 +99,29 @@ class TedarikDetayScreen extends StatelessWidget {
     );
   }
 
-  void _showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.green[200],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
+  void _navigateToUserProfile(String userEmail) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          userEmail: userEmail,
+          firebaseUser: widget.currentUserEmail,
+          toggleTheme: widget.toggleTheme,
+          isDarkMode: widget.isDarkMode,
         ),
-        title: Text(
-          'Başvuru Başarılı!',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Başvurunuz başarıyla alındı. İlgili kullanıcı size geri dönüş yapacaktır.',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: Text(
-              'Tamam',
-              style: TextStyle(color: Colors.white),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showErrorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.red[200],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        title: Text(
-          'Başvuru Hatası!',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Bu tedariğe zaten başvurdunuz!',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: Text(
-              'Tamam',
-              style: TextStyle(color: Colors.white),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final baslik = tedarik['baslik'];
-    final aciklama = tedarik['aciklama'];
-    final fiyat = tedarik['fiyat'];
-    final detayliAciklama = tedarik['detayli_aciklama'];
-    final kullanici = tedarik['kullanici'];
-    final imageUrl = tedarik['imageUrl'] ?? '';
-    final sektor = tedarik['sektor'] ?? 'Sektör bilgisi mevcut değil';
+    final baslik = widget.tedarik['baslik'];
+    final aciklama = widget.tedarik['aciklama'];
+    final fiyat = widget.tedarik['fiyat'];
+    final detayliAciklama = widget.tedarik['detayli_aciklama'];
+    final kullanici = widget.tedarik['kullanici'];
+    final imageUrl = widget.tedarik['imageUrl'] ?? '';
+    final sektor = widget.tedarik['sektor'] ?? 'Sektör bilgisi mevcut değil';
 
     return Scaffold(
       appBar: AppBar(
@@ -148,225 +129,243 @@ class TedarikDetayScreen extends StatelessWidget {
           'Tedarik Detayları',
           style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () => widget.toggleTheme(),
+          ),
+        ],
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                baslik,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28,
-                  color: Colors.teal,
-                  fontFamily: 'Roboto',
-                ),
-              ),
-              SizedBox(height: 16),
-
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.teal),
-                          SizedBox(width: 8),
-                          Text(
-                            'Açıklama:',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        aciklama,
-                        style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Sektör Kartı
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.business_center, color: Colors.deepPurple),
-                      SizedBox(width: 8),
-                      Text(
-                        'Sektör: $sektor',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.deepPurple[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.monetization_on, color: Colors.green),
-                      SizedBox(width: 8),
-                      Text(
-                        'Fiyat: \$${fiyat.toString()}',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.description_outlined, color: Colors.teal),
-                          SizedBox(width: 8),
-                          Text(
-                            'Detaylı Açıklama:',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        detayliAciklama,
-                        style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.person, color: Colors.blueAccent),
-                          SizedBox(width: 8),
-                          Text(
-                            'Paylaşan Kullanıcı:',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        kullanici,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.blueAccent,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-
-              if (imageUrl.isNotEmpty)
-                GestureDetector(
-                  onTap: () => _showFullScreenImage(context, imageUrl),
-                  child: Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 250,
-                      ),
-                    ),
-                  ),
-                ),
-              SizedBox(height: 30),
-
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () => _applyToTedarik(context),
-                  icon: Icon(Icons.check_circle, color: Colors.white),
-                  label: Text(
-                    'Başvur',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                ),
-              ),
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).cardColor,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  baslik,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.headlineLarge?.color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                GestureDetector(
+                  onTap: () => _navigateToUserProfile(kullanici),
+                  child: Container(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.secondary,
+                              )
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.person, color: Colors.blueAccent),
+                              SizedBox(width: 8),
+                              Text(
+                                kullanici,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.blueAccent,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.description, color: Colors.amber),
+                            SizedBox(width: 8),
+                            Text(
+                              'Açıklama:',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          aciklama,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                if (imageUrl.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => _showFullScreenImage(context, imageUrl),
+                    child: Card(
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 250,
+                        ),
+                      ),
+                    ),
+                  ),
+                SizedBox(height: 16),
+
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.monetization_on, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'Fiyat: ${fiyat.toString()}\₺',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.business, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'Sektör: $sektor',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.notes, color: Colors.blueGrey),
+                            SizedBox(width: 8),
+                            Text(
+                              'Detaylı Açıklama:',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          detayliAciklama,
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+
+                if (widget.tedarik['kullanici'] != widget.currentUserEmail)
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: _toggleApplication,
+                      icon: Icon(
+                        _hasApplied ? Icons.close : Icons.check_circle,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        _hasApplied ? 'Başvuruyu Geri Çek' : 'Başvur',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _hasApplied ? Colors.red : Theme.of(context).primaryColor,
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

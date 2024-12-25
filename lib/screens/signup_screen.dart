@@ -1,147 +1,206 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'login_screen.dart';
+import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {
+  final Function toggleTheme;
+  final bool isDarkMode;
+
+  SignupScreen({
+    required this.toggleTheme,
+    required this.isDarkMode,
+  });
+
   @override
-  _SignupScreenState createState() => _SignupScreenState();
+  SignupScreenState createState() => SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class SignupScreenState extends State<SignupScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  String _errorMessage = '';
+  bool _isDarkMode = false; // Başlangıç değeri atadık
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  @override
+  void initState() {
+    super.initState();
+    _isDarkMode = widget.isDarkMode; // initState'te widget'tan gelen değeri atıyoruz
+  }
 
-  // Kullanıcının FCM token'ını kaydet
-  Future<void> saveToken(String userId) async {
-    try {
-      String? token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        await FirebaseFirestore.instance.collection('users').doc(userId).set({
-          'email': _emailController.text,
-          'fcmToken': token,
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Token kaydedilemedi: $e')),
-      );
+  @override
+  void didUpdateWidget(SignupScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isDarkMode != widget.isDarkMode) {
+      setState(() {
+        _isDarkMode = widget.isDarkMode;
+      });
     }
   }
 
-  // Kullanıcı kaydını yapma
-  void _signUp() async {
-    try {
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-
-      await saveToken(userCredential.user!.uid);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Kayıt Yapılamadı: $e")),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
           'Kayıt Ol',
           style: TextStyle(color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () {
+              widget.toggleTheme();
+              setState(() {
+                _isDarkMode = !_isDarkMode;
+              });
+            },
+          ),
+        ],
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 50),
-              Text(
-                'Yeni Hesap Oluşturun',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Hesabınızı oluşturmak için bilgilerinizi girin.',
-                style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-              ),
-              SizedBox(height: 30),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'E-posta',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  prefixIcon: Icon(Icons.email, color: Colors.deepPurple),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Şifre',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  prefixIcon: Icon(Icons.lock, color: Colors.deepPurple),
-                ),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _signUp,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Center(
-                  child: Text(
-                    'Kayıt Ol',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
-                  },
-                  child: Text(
-                    'Zaten Hesabınız Var mı? Giriş Yapın',
-                    style: TextStyle(color: Colors.deepPurple),
-                  ),
-                ),
-              ),
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.secondary,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Yeni Hesap Oluştur',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Lütfen bilgilerinizi girerek kayıt olun.',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 30),
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'E-posta',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  obscureText: true,
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre Tekrar',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                  obscureText: true,
+                ),
+                SizedBox(height: 30),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                  ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_passwordController.text != _confirmPasswordController.text) {
+                      setState(() {
+                        _errorMessage = 'Şifreler eşleşmiyor!';
+                      });
+                      return;
+                    }
+
+                    try {
+                      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                      );
+
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/home',
+                        arguments: {
+                          'userEmail': userCredential.user!.email!,
+                          'toggleTheme': widget.toggleTheme,
+                          'isDarkMode': _isDarkMode,
+                        },
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      setState(() {
+                        if (e.code == 'weak-password') {
+                          _errorMessage = 'Şifre çok zayıf.';
+                        } else if (e.code == 'email-already-in-use') {
+                          _errorMessage = 'Bu e-posta adresi zaten kullanımda.';
+                        } else {
+                          _errorMessage = 'Bir hata oluştu: ${e.message}';
+                        }
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _errorMessage = 'Bir hata oluştu: $e';
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Kayıt Ol',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Zaten hesabınız var mı? Giriş yapın',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
