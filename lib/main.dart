@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/login_screen.dart'; // Giriş ekranı
+import 'screens/login_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Firebase'i başlat
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -82,9 +82,9 @@ class MyAppState extends State<MyApp> {
         dividerColor: Colors.blueGrey[100],
         buttonTheme: ButtonThemeData(
             buttonColor:  Colors.blueAccent
-        ), // Ekstra bir buton rengi
+        ),
         toggleButtonsTheme: ToggleButtonsThemeData(
-          selectedColor:  Colors.blueAccent, // Switch ve Toggle için ekstra renk
+          selectedColor:  Colors.blueAccent,
         ),
       ),
       darkTheme: ThemeData(
@@ -131,9 +131,9 @@ class MyAppState extends State<MyApp> {
         dividerColor: Colors.grey[700],
         buttonTheme: ButtonThemeData(
           buttonColor:  Colors.grey,
-        ),// Ekstra bir buton rengi
+        ),
         toggleButtonsTheme: ToggleButtonsThemeData(
-          selectedColor:  Colors.grey[700], // Switch ve Toggle için ekstra renk
+          selectedColor:  Colors.grey[700],
         ),
       ),
       themeMode: _currentThemeMode,
@@ -147,7 +147,6 @@ class MyAppState extends State<MyApp> {
             ),
           );
         } else if (settings.name == '/home') {
-          // Route argümanlarını al
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => HomeScreen(
