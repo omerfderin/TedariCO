@@ -19,12 +19,12 @@ class SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   String _errorMessage = '';
-  bool _isDarkMode = false; // Başlangıç değeri atadık
+  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
-    _isDarkMode = widget.isDarkMode; // initState'te widget'tan gelen değeri atıyoruz
+    _isDarkMode = widget.isDarkMode;
   }
 
   @override
