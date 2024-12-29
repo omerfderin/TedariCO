@@ -102,9 +102,8 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Widget yapısı aynı kalacak, sadece tema ile ilgili güncellemeler yapılacak
     return Scaffold(
-      appBar: null, // HomeScreen içinde olduğu için AppBar'a gerek yok
+      appBar: null,
       body: Container(
         height: double.infinity,
         decoration: BoxDecoration(
@@ -122,7 +121,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Başlık Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -147,8 +145,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-
-                // Açıklama Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -173,8 +169,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-
-                // Fiyat Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -200,8 +194,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-
-                // Detaylı Açıklama Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -227,8 +219,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
-
-                // Sektör Seçim Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -264,7 +254,7 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                 ),
                 SizedBox(height: 16),
 
-                // Sektör Detay Kartı (Seçilen sektör burada gösterilecek)
+                
                 if (_selectedSector != null) ...[
                   Card(
                     elevation: 5,
@@ -288,8 +278,6 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                   SizedBox(height: 16),
                 ],
 
-                // Görsel Seçme Kartı
-                // Görsel Seçme Kartı
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -325,12 +313,12 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15), // Köşeleri yuvarla
+                        borderRadius: BorderRadius.circular(15),
                         child: Image.file(
                           File(_image!.path),
                           height: 200,
                           fit: BoxFit.cover,
-                          width: double.infinity, // Kartın tamamını kapla
+                          width: double.infinity,
                         ),
                       ),
                     ),
@@ -338,13 +326,10 @@ class TedarikEkleScreenState extends State<TedarikEkleScreen> {
                 ],
                 SizedBox(height: 20),
 
-
-
-                // Paylaş Butonu
                 ElevatedButton(
                   onPressed: _shareTedarik,
                   child: Text('Tedarik Paylaş', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Colors.white)),
-                  style: ElevatedButton.styleFrom(// Buton rengi
+                  style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
