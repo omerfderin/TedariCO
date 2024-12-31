@@ -395,7 +395,7 @@ class HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.account_circle_rounded),
               label: 'Paylaşımlarım',
             ),
-            BottomNavigationBarItem(                    // Yeni eklenen item
+            BottomNavigationBarItem(                  
               icon: Icon(Icons.assignment_turned_in),
               label: 'Başvurularım',
             ),
