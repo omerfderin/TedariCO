@@ -5,7 +5,7 @@ import 'signup_screen.dart';
 class LoginScreen extends StatefulWidget {
   final Function toggleTheme;
   final bool isDarkMode;
-  final FirebaseAuth? firebaseAuth; // Firebase Auth için opsiyonel parametre
+  final FirebaseAuth? firebaseAuth;
 
   LoginScreen({
     required this.toggleTheme,
@@ -49,24 +49,19 @@ class LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Email validasyonu için metod
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
   }
-
-  // Şifre validasyonu için metod
   bool isValidPassword(String password) {
     return password.length >= 6;
   }
 
-  // Form validasyonu için metod
   bool isValidForm() {
     return isValidEmail(_emailController.text) &&
         isValidPassword(_passwordController.text);
   }
 
-  // Login işlemi için metod
   Future<void> handleLogin() async {
     if (!isValidForm()) {
       setState(() {
