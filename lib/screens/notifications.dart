@@ -31,12 +31,10 @@ class NotificationsScreen extends StatelessWidget {
             .where('alici', isEqualTo: currentUserEmail)
             .snapshots(),
         builder: (context, snapshot) {
-          // Bağlantı durumunu kontrol et
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
 
-          // Hata durumunu kontrol et
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -52,7 +50,6 @@ class NotificationsScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      // Sayfayı yenile
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -71,7 +68,6 @@ class NotificationsScreen extends StatelessWidget {
             );
           }
 
-          // Veri kontrolü
           if (!snapshot.hasData || snapshot.data == null) {
             return Center(child: Text('Veriler yüklenemedi'));
           }
@@ -116,13 +112,11 @@ class NotificationsScreen extends StatelessWidget {
                     ),
                     onTap: () async {
                       try {
-                        // Bildirimi okundu olarak işaretle
                         await FirebaseFirestore.instance
                             .collection('bildirimler')
                             .doc(bildirimId)
                             .update({'okundu': true});
 
-                        // İlgili tedarik dokümanını al
                         final tedarikDoc = await FirebaseFirestore.instance
                             .collection('tedarikler')
                             .doc(bildirim['tedarikId'])
@@ -160,7 +154,6 @@ class NotificationsScreen extends StatelessWidget {
                   ),
                 );
               } catch (e) {
-                // Hatalı bildirimi atla ve bir sonrakine geç
                 return SizedBox.shrink();
               }
             },
