@@ -2,13 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 
-class TedarikDetayScreen extends StatefulWidget {
+class SupplyDetailScreen extends StatefulWidget {
   final DocumentSnapshot tedarik;
   final String currentUserEmail;
   final Function toggleTheme;
   final bool isDarkMode;
 
-  TedarikDetayScreen({
+  SupplyDetailScreen({
     required this.tedarik,
     required this.currentUserEmail,
     required this.toggleTheme,
@@ -16,10 +16,12 @@ class TedarikDetayScreen extends StatefulWidget {
   });
 
   @override
-  TedarikDetayScreenState createState() => TedarikDetayScreenState();
+  SupplyDetailScreenState createState() => SupplyDetailScreenState();
+
+  _toggleApplication() {}
 }
 
-class TedarikDetayScreenState extends State<TedarikDetayScreen> {
+class SupplyDetailScreenState extends State<SupplyDetailScreen> {
   bool _hasApplied = false;
 
   @override

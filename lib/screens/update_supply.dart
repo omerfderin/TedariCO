@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profile_screen.dart';
 
-class GuncelleScreen extends StatefulWidget {
+class UpdateSupply extends StatefulWidget {
   final DocumentSnapshot tedarik;
   final String userEmail;
   final Function toggleTheme;
   final bool isDarkMode;
 
-  GuncelleScreen({
+  UpdateSupply({
     required this.tedarik,
     required this.userEmail,
     required this.toggleTheme,
@@ -16,10 +16,10 @@ class GuncelleScreen extends StatefulWidget {
   });
 
   @override
-  GuncelleScreenState createState() => GuncelleScreenState();
+  UpdateSupplyState createState() => UpdateSupplyState();
 }
 
-class GuncelleScreenState extends State<GuncelleScreen> {
+class UpdateSupplyState extends State<UpdateSupply> {
   final _formKey = GlobalKey<FormState>();
   final _baslikController = TextEditingController();
   final _aciklamaController = TextEditingController();
@@ -52,7 +52,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
           SnackBar(content: Text('Tedarik başarıyla güncellendi!'), backgroundColor: Colors.green),
         );
 
-        Navigator.pop(context);
+        Navigator.pop(context); // Güncelleme sonrası geri dön
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
@@ -69,11 +69,11 @@ class GuncelleScreenState extends State<GuncelleScreen> {
           content: Text('Bu paylaşımı silmek istediğinize emin misiniz?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context, false), // Vazgeç
               child: Text('Hayır'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(context, true), // Onayla
               child: Text('Evet'),
             ),
           ],
@@ -95,7 +95,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
           ),
         );
 
-        Navigator.pop(context);
+        Navigator.pop(context); // Silme sonrası önceki sayfaya dön
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -180,6 +180,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
             key: _formKey,
             child: ListView(
               children: [
+                // Başlık Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -210,6 +211,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
                     ),
                   ),
                 ),
+                // Açıklama Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -240,6 +242,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
                     ),
                   ),
                 ),
+                // Fiyat Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -274,6 +277,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
                     ),
                   ),
                 ),
+                // Detaylı Açıklama Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -305,6 +309,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
                     ),
                   ),
                 ),
+                // Güncelleme Butonu
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: ElevatedButton(
@@ -319,6 +324,7 @@ class GuncelleScreenState extends State<GuncelleScreen> {
                     child: Text('Tedarik Güncelle',style: TextStyle(color: Colors.white),),
                   ),
                 ),
+                // Başvuranları Görüntüle Butonu
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ElevatedButton(

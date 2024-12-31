@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tedarikci_uygulamasi/screens/Ba%C5%9Fvurular%C4%B1m.dart';
-import 'package:tedarikci_uygulamasi/screens/paylasimlar.dart';
-import 'guncelle.dart';
+import 'package:tedarikci_uygulamasi/screens/my_applications.dart';
+import 'package:tedarikci_uygulamasi/screens/my_posts.dart';
+import 'update_supply.dart';
 import 'share_screen.dart';
-import 'detail_screen.dart';
-import 'bildirimler.dart';
+import 'supply_detail_screen.dart';
+import 'notifications.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userEmail;
@@ -17,6 +17,13 @@ class HomeScreen extends StatefulWidget {
     required this.toggleTheme,
     required this.isDarkMode,
   });
+
+  get tedariklerStream => null;
+
+  get selectedIndex => null;
+
+  set _selectedFilter(String _selectedFilter) {}
+
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -80,7 +87,7 @@ class HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => BildirimlerScreen(
+                          builder: (context) => NotificationsScreen(
                             currentUserEmail: widget.userEmail,
                             toggleTheme: widget.toggleTheme,
                             isDarkMode: widget.isDarkMode,
@@ -138,19 +145,19 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: _selectedIndex == 3
-            ? BasvurularimScreen(
+            ? MyApplicationsScreen(
           userEmail: widget.userEmail,
           toggleTheme: widget.toggleTheme,
           isDarkMode: widget.isDarkMode,
         )
             : _selectedIndex == 1
-            ? TedarikEkleScreen(
+            ? ShareScreen(
           userEmail: widget.userEmail,
           toggleTheme: widget.toggleTheme,
           isDarkMode: widget.isDarkMode,
         )
             : _selectedIndex == 2
-            ? KendiPaylasimlarScreen(
+            ? MyPostsScreen(
           userEmail: widget.userEmail,
           toggleTheme: widget.toggleTheme,
           isDarkMode: widget.isDarkMode,
@@ -239,7 +246,7 @@ class HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => GuncelleScreen(
+                                  builder: (context) => UpdateSupply(
                                     tedarik: tedarik,
                                     userEmail: widget.userEmail,
                                     toggleTheme: widget.toggleTheme,
@@ -251,7 +258,7 @@ class HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => TedarikDetayScreen(
+                                  builder: (context) => SupplyDetailScreen(
                                     tedarik: tedarik,
                                     currentUserEmail: widget.userEmail,
                                     toggleTheme: widget.toggleTheme,
@@ -388,7 +395,7 @@ class HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.account_circle_rounded),
               label: 'Paylaşımlarım',
             ),
-            BottomNavigationBarItem(                  
+            BottomNavigationBarItem(                    // Yeni eklenen item
               icon: Icon(Icons.assignment_turned_in),
               label: 'Başvurularım',
             ),

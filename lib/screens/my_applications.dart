@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tedarikci_uygulamasi/screens/detail_screen.dart';
+import 'package:tedarikci_uygulamasi/screens/supply_detail_screen.dart';
 
-class BasvurularimScreen extends StatelessWidget {
+class MyApplicationsScreen extends StatelessWidget {
   final String userEmail;
   final Function toggleTheme;
   final bool isDarkMode;
 
-  BasvurularimScreen({
+  MyApplicationsScreen({
     required this.userEmail,
     required this.toggleTheme,
     required this.isDarkMode,
@@ -78,7 +78,7 @@ class BasvurularimScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TedarikDetayScreen(
+                        builder: (context) => SupplyDetailScreen(
                           tedarik: basvuru,
                           currentUserEmail: userEmail,
                           toggleTheme: toggleTheme,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tedarikci_uygulamasi/screens/detail_screen.dart';
+import 'package:tedarikci_uygulamasi/screens/supply_detail_screen.dart';
 
 class UserProfileScreen extends StatelessWidget {
   final String userEmail;
@@ -98,7 +98,7 @@ class UserProfileScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => TedarikDetayScreen(
+                                builder: (context) => SupplyDetailScreen(
                                   tedarik: tedarik,
                                   currentUserEmail: firebaseUser,
                                   toggleTheme: toggleTheme,

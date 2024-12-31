@@ -3,14 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tedarikci_uygulamasi/screens/login_screen.dart';
 
-// Mock Firebase Auth
 class MockFirebaseAuth extends Fake implements FirebaseAuth {
   @override
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(Duration(milliseconds: 500)); // Simüle edilmiş gecikme
+    await Future.delayed(Duration(milliseconds: 500));
 
     if (email == 'test@test.com' && password == 'password123') {
       return MockUserCredential();
@@ -37,7 +36,6 @@ void main() {
 
   setUp(() {
     mockAuth = MockFirebaseAuth();
-    // Firebase.initializeApp() çağrısını mock'la
     TestWidgetsFlutterBinding.ensureInitialized();
   });
 
@@ -50,10 +48,7 @@ void main() {
         ),
       ));
 
-      // AppBar'daki "Giriş Yap" metnini bul
       expect(find.widgetWithText(AppBar, 'Giriş Yap'), findsOneWidget);
-
-      // Diğer UI elemanları
       expect(find.text('Hoş geldiniz!'), findsOneWidget);
       expect(find.text('Lütfen e-posta ve şifrenizi girerek devam edin.'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'E-posta'), findsOneWidget);
@@ -65,11 +60,10 @@ void main() {
         home: LoginScreen(
           toggleTheme: () {},
           isDarkMode: false,
-          firebaseAuth: mockAuth, // Mock Firebase Auth'u enjekte et
+          firebaseAuth: mockAuth,
         ),
       ));
 
-      // Geçersiz bilgilerle giriş dene
       await tester.enterText(
           find.widgetWithText(TextField, 'E-posta'),
           'wrong@test.com'
@@ -79,15 +73,11 @@ void main() {
           'wrongpass'
       );
 
-      // Login butonuna tıkla
       await tester.tap(find.widgetWithText(ElevatedButton, 'Giriş Yap'));
-
-      // Firebase işleminin tamamlanmasını bekle
       await tester.pump();
       await tester.pump(Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      // Hata mesajını kontrol et
       expect(find.text('E-posta veya şifreniz yanlış.'), findsOneWidget);
     });
 
@@ -96,11 +86,10 @@ void main() {
         home: LoginScreen(
           toggleTheme: () {},
           isDarkMode: false,
-          firebaseAuth: mockAuth, // Mock Firebase Auth'u enjekte et
+          firebaseAuth: mockAuth,
         ),
       ));
 
-      // Geçerli bilgilerle giriş dene
       await tester.enterText(
           find.widgetWithText(TextField, 'E-posta'),
           'test@test.com'
@@ -110,16 +99,9 @@ void main() {
           'password123'
       );
 
-      // Login butonuna tıkla
       await tester.tap(find.widgetWithText(ElevatedButton, 'Giriş Yap'));
-
-      // İlk frame'i işle (loading göstergesi burada görünmeli)
       await tester.pump();
-
-      // Loading göstergesi kontrolü
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      // İşlemin tamamlanmasını bekle
       await tester.pumpAndSettle();
     });
   });

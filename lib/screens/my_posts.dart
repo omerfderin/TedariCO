@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'guncelle.dart';
+import 'update_supply.dart';
 
-class KendiPaylasimlarScreen extends StatelessWidget {
+class MyPostsScreen extends StatelessWidget {
   final String userEmail;
   final Function toggleTheme;
   final bool isDarkMode;
 
-  KendiPaylasimlarScreen({
+  MyPostsScreen({
     required this.userEmail,
     required this.toggleTheme,
     required this.isDarkMode,
@@ -66,7 +66,7 @@ class KendiPaylasimlarScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => GuncelleScreen(
+                        builder: (context) => UpdateSupply(
                           tedarik: tedarik,
                           userEmail: userEmail,
                           toggleTheme: toggleTheme,
