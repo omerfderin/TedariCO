@@ -52,7 +52,7 @@ class UpdateSupplyState extends State<UpdateSupply> {
           SnackBar(content: Text('Tedarik başarıyla güncellendi!'), backgroundColor: Colors.green),
         );
 
-        Navigator.pop(context); // Güncelleme sonrası geri dön
+        Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
@@ -69,11 +69,11 @@ class UpdateSupplyState extends State<UpdateSupply> {
           content: Text('Bu paylaşımı silmek istediğinize emin misiniz?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false), // Vazgeç
+              onPressed: () => Navigator.pop(context, false),
               child: Text('Hayır'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, true), // Onayla
+              onPressed: () => Navigator.pop(context, true),
               child: Text('Evet'),
             ),
           ],
@@ -95,7 +95,7 @@ class UpdateSupplyState extends State<UpdateSupply> {
           ),
         );
 
-        Navigator.pop(context); // Silme sonrası önceki sayfaya dön
+        Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -180,7 +180,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
             key: _formKey,
             child: ListView(
               children: [
-                // Başlık Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -211,7 +210,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
                     ),
                   ),
                 ),
-                // Açıklama Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -242,7 +240,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
                     ),
                   ),
                 ),
-                // Fiyat Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -277,7 +274,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
                     ),
                   ),
                 ),
-                // Detaylı Açıklama Kartı
                 Card(
                   elevation: 6,
                   margin: EdgeInsets.symmetric(vertical: 8),
@@ -309,7 +305,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
                     ),
                   ),
                 ),
-                // Güncelleme Butonu
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: ElevatedButton(
@@ -324,7 +319,6 @@ class UpdateSupplyState extends State<UpdateSupply> {
                     child: Text('Tedarik Güncelle',style: TextStyle(color: Colors.white),),
                   ),
                 ),
-                // Başvuranları Görüntüle Butonu
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ElevatedButton(
