@@ -1,72 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:tedarikci_uygulamasi/main.dart';
 import 'package:tedarikci_uygulamasi/screens/home_screen.dart';
-
-// Mock sınıfı
-class MockTheme extends Mock {
-  void toggleTheme();
-}
+import 'package:tedarikci_uygulamasi/screens/login_screen.dart';
 
 void main() {
-  group('MyApp', () {
-    MockTheme? mockTheme;
-
-    setUp(() {
-      mockTheme = MockTheme();
-    });
-
-    testWidgets('Initial Theme is Light', (WidgetTester tester) async {
+  group('MyApp Widget Tests', () {
+    testWidgets('MyApp Test with Theme Toggle and Navigation', (WidgetTester tester) async {
       await tester.pumpWidget(MyApp());
 
-      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.themeMode, ThemeMode.system);
-    });
-
-    testWidgets('Toggle Theme to Dark', (WidgetTester tester) async {
-      await tester.pumpWidget(MyApp(
-        toggleTheme: mockTheme!.toggleTheme,
-        isDarkMode: false, // Başlangıçta açık mod
-      ));
-
+      expect(find.byType(LoginScreen), findsOneWidget);
       await tester.tap(find.byIcon(Icons.dark_mode));
-      await tester.pumpAndSettle(); // Animasyonların tamamlanmasını bekle
-      verify(mockTheme!.toggleTheme()).called(1);
-    });
+      await tester.pump();
+      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(materialApp.themeMode, ThemeMode.dark);
 
-    testWidgets('Toggle Theme to Light', (WidgetTester tester) async {
-      await tester.pumpWidget(MyApp(
-        toggleTheme: mockTheme!.toggleTheme,
-        isDarkMode: true, // Başlangıçta koyu mod
-      ));
-
-      await tester.tap(find.byIcon(Icons.light_mode));
-      await tester.pumpAndSettle(); // Animasyonların tamamlanmasını bekle
-      verify(mockTheme!.toggleTheme()).called(1);
-    });
-
-    testWidgets('Navigate to HomeScreen with Arguments', (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: MyApp(),
-        onGenerateRoute: (settings) {
-          if (settings.name == '/home') {
-            return MaterialPageRoute(
-              builder: (context) => HomeScreen(
-                userEmail: 'test@example.com',
-                toggleTheme: () {},
-                isDarkMode: false,
-              ),
-            );
-          }
-          return null;
-        },
-      ));
-
+      final userEmail = 'test@example.com';
+      await tester.tap(find.byIcon(Icons.home_rounded));
       await tester.pumpAndSettle();
 
-      final homeScreen = find.byType(HomeScreen);
-      expect(homeScreen, findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text(userEmail), findsOneWidget);
+    });
+
+    testWidgets('Initial theme should be light', (WidgetTester tester) async {
+      await tester.pumpWidget(MyApp());
+      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(materialApp.themeMode, ThemeMode.light);
+    });
+
+    testWidgets('Should persist theme selection', (WidgetTester tester) async {
+      await tester.pumpWidget(MyApp());
+
+      // Karanlık temaya geç
+      await tester.tap(find.byIcon(Icons.dark_mode));
+      await tester.pump();
+      var materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(materialApp.themeMode, ThemeMode.dark);
+
+      // Aydınlık temaya geç
+      await tester.tap(find.byIcon(Icons.light_mode));
+      await tester.pump();
+      materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(materialApp.themeMode, ThemeMode.light);
+    });
+
+    testWidgets('Should show error on invalid navigation', (WidgetTester tester) async {
+      await tester.pumpWidget(MyApp());
+
+      // Geçersiz rota için Navigator'ı kullan
+      final BuildContext context = tester.element(find.byType(MaterialApp));
+      Navigator.pushNamed(context, '/invalid_route');
+      await tester.pumpAndSettle();
+
+      // Hata mesajını kontrol et
+      expect(find.byType(ErrorWidget), findsOneWidget);
+    });
+
+    testWidgets('Should handle back navigation properly', (WidgetTester tester) async {
+      await tester.pumpWidget(MyApp());
+
+      // Ana sayfaya git
+      await tester.tap(find.byIcon(Icons.home_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+
+      // Geri dön
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
     });
   });
 }

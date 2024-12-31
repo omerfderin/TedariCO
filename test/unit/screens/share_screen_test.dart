@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,25 +8,58 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tedarikci_uygulamasi/screens/share_screen.dart';
 import 'dart:io';
 
-class MockImagePicker extends Mock implements ImagePicker {}
-class MockFirebaseStorage extends Mock implements FirebaseStorage {}
-class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+@GenerateMocks([ImagePicker, FirebaseStorage, FirebaseFirestore, Reference, CollectionReference])
+class MockImagePicker extends Mock implements ImagePicker {
+  @override
+  Future<XFile?> pickImage({
+    ImageSource? source,
+    int? imageQuality,
+    double? maxHeight,
+    double? maxWidth,
+    CameraDevice? preferredCameraDevice,
+    bool? requestFullMetadata,
+  }) async {
+    return XFile('path/to/test/image.jpg');
+  }
+}
 
-class FakeReference extends Mock implements Reference {}
-class FakeCollectionReference extends Mock implements CollectionReference {}
+class MockFirebaseStorage extends Mock implements FirebaseStorage {
+  @override
+  Reference ref([String? path]) => MockReference();
+}
+
+class MockFirebaseFirestore extends Mock implements FirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) =>
+      MockCollectionReference() as CollectionReference<Map<String, dynamic>>;
+}
+
+class MockReference extends Mock implements Reference {
+  @override
+  Reference child(String path) => this;
+}
+
+class MockCollectionReference extends Mock implements CollectionReference<Map<String, dynamic>> {
+  @override
+  Future<DocumentReference<Map<String, dynamic>>> add(Map<String, dynamic>? data) async {
+    return MockDocumentReference() as DocumentReference<Map<String, dynamic>>;
+  }
+}
+
+class MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {}
 
 void main() {
   group('ShareScreen', () {
-    final mockPicker = MockImagePicker();
-    final mockStorage = MockFirebaseStorage();
-    final mockFirestore = MockFirebaseFirestore();
-    String userEmail = 'testuser@example.com';
-    bool isDarkMode = false;
+    late MockImagePicker mockPicker;
+    late MockFirebaseStorage mockStorage;
+    late MockFirebaseFirestore mockFirestore;
+    final String userEmail = 'testuser@example.com';
+    final bool isDarkMode = false;
 
     setUp(() {
-      when(mockPicker.pickImage(source: anyNamed('source'))).thenAnswer((_) async => XFile('path/to/test/image.jpg'));
-      when(mockStorage.ref().child(any)).thenReturn(FakeReference());
-      when(mockFirestore.collection(any)).thenReturn(FakeCollectionReference());
+      mockPicker = MockImagePicker();
+      mockStorage = MockFirebaseStorage();
+      mockFirestore = MockFirebaseFirestore();
     });
 
     testWidgets('should display an error if any field is empty', (WidgetTester tester) async {
@@ -56,6 +90,9 @@ void main() {
       await tester.enterText(find.byType(TextField).at(1), 'Test Açıklama');
       await tester.enterText(find.byType(TextField).at(2), '150');
       await tester.enterText(find.byType(TextField).at(3), 'Detaylı Açıklama');
+
+      await tester.tap(find.text('Görsel eklemek için tıklayın'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.byType(ElevatedButton));
       await tester.pumpAndSettle();

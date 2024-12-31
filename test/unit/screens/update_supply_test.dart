@@ -1,13 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../lib/screens/update_supply.dart';
 
-class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
-class MockCollectionReference extends Mock implements CollectionReference {}
-class MockDocumentReference extends Mock implements DocumentReference {}
-class MockDocumentSnapshot extends Mock implements DocumentSnapshot {
+@GenerateMocks([FirebaseFirestore, CollectionReference, DocumentReference])
+class MockFirebaseFirestore extends Mock implements FirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String path) =>
+      MockCollectionReference() as CollectionReference<Map<String, dynamic>>;
+}
+
+class MockCollectionReference extends Mock implements CollectionReference<Map<String, dynamic>> {
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) =>
+      MockDocumentReference() as DocumentReference<Map<String, dynamic>>;
+}
+
+class MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {
+  @override
+  Future<void> update(Map<Object, Object?> data) async => Future.value();
+
+  @override
+  Future<void> delete() async => Future.value();
+}
+
+class MockDocumentSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {
   @override
   String get id => 'mockId';
 
@@ -18,6 +37,9 @@ class MockDocumentSnapshot extends Mock implements DocumentSnapshot {
     'fiyat': 100.0,
     'detayli_aciklama': 'Test Detailed Description',
   };
+
+  @override
+  DocumentReference<Map<String, dynamic>> get reference => MockDocumentReference();
 }
 
 void main() {
@@ -33,8 +55,12 @@ void main() {
       mockDocumentReference = MockDocumentReference();
       mockDocument = MockDocumentSnapshot();
 
-      when(mockFirestore.collection('tedarikler')).thenReturn(mockCollectionReference as CollectionReference<Map<String, dynamic>>);
+      when(mockFirestore.collection('tedarikler')).thenReturn(mockCollectionReference);
       when(mockCollectionReference.doc(any)).thenReturn(mockDocumentReference);
+
+      // Mock update ve delete metodları için
+      when(mockDocumentReference.update(any)).thenAnswer((_) => Future<void>.value());
+      when(mockDocumentReference.delete()).thenAnswer((_) => Future<void>.value());
     });
 
     testWidgets('should update tedarik when valid data is provided',
@@ -60,7 +86,14 @@ void main() {
           await tester.tap(find.byType(ElevatedButton).first);
           await tester.pumpAndSettle();
 
-          verify(mockDocumentReference.update(any)).called(1);
+          final Map<Object, Object?> expectedUpdate = {
+            'baslik': 'Updated Title',
+            'aciklama': 'Updated Description',
+            'fiyat': 200,
+            'detayli_aciklama': 'Updated Detailed Description',
+          };
+
+          verify(mockDocumentReference.update(expectedUpdate)).called(1);
         });
 
     testWidgets('should delete tedarik when confirmation is given',
