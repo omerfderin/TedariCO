@@ -59,7 +59,9 @@ void main() {
       when(mockCollectionReference.doc(any)).thenReturn(mockDocumentReference);
 
       // Mock update ve delete metodları için
-      when(mockDocumentReference.update(any)).thenAnswer((_) => Future<void>.value());
+      when(mockDocumentReference.update(any as Map<String, dynamic>))
+          .thenAnswer((_) => Future<void>.value());
+
       when(mockDocumentReference.delete()).thenAnswer((_) => Future<void>.value());
     });
 
